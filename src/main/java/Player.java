@@ -1,6 +1,4 @@
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 
 class Player {
     public static void main(String... args) {
@@ -9,7 +7,11 @@ class Player {
 }
 
 abstract class Card {
-    public DraftInfo draftInfo;
+
+    boolean isPlayed = false;
+
+
+    DraftInfo draftInfo;
 
     int cardNumber;
     int instanceId;
@@ -24,10 +26,10 @@ abstract class Card {
     int opponentHealthChange;
     int cardDraw;
 
-    public Card(){}
+    public Card() {
+    }
 
-    Card read(Scanner in, int turnNumber)
-    {
+    Card read(Scanner in, int turnNumber) {
         this.cardNumber = in.nextInt();
         this.instanceId = in.nextInt();
         this.draftInfo = new DraftInfo(in.nextInt(), turnNumber);
@@ -43,23 +45,23 @@ abstract class Card {
     }
 }
 
-enum TYPE{ATTACKANT, DEFENSIVE, ROUNDED}
+enum TYPE {ATTACKANT, DEFENSIVE, ROUNDED}
 
 class Creature extends Card {
     int efficiency;
+    int playedEfficiency;
+
     TYPE cardType;
 
-    void analyse()
-    {
+    void analyse() {
 
     }
 }
 
-class Action
-{
+class Action {
     public static final String ACTION_SEPARATOR = ";";
 
-    enum BASE{
+    enum BASE {
         PICK, SUMMON, ATTACK_CREATURE, ATTACK_PLAYER, PASS
     }
 
@@ -93,8 +95,7 @@ class Action
     }
 
     public String toString() {
-        switch (base)
-        {
+        switch (base) {
             case PICK:
                 return "PICK " + draftInfo.positionNumber;
             case SUMMON:
@@ -116,13 +117,18 @@ class Action
     }
 }
 
+class MyPlayerInfo extends PlayerInfo {
+    Map<String, Card> deck = new HashMap<>(30);
+
+    Map<Integer, Card> hand = new HashMap<>();
+
+}
+
 class PlayerInfo {
     public int playerHealth;
     public int playerMana;
     public int playerDeck;
     public int playerRune;
-
-    public int hand;
 
     public PlayerInfo() {
         playerHealth = 30;
@@ -157,7 +163,89 @@ class LegendsOfCodeGame {
     public int opponentHand;
     public int cardCount;
 
+    public Card[] draftPicks = new Card[3];
+
     public List<Action> currentActions = new ArrayList<>();
+
+    public String currentComment = "";
+
+    public Map<Integer, Card> myHand = new TreeMap<>(Collections.reverseOrder());
+    public List<Card> myBoard = new ArrayList<>();
+    public List<Card> otherBoard = new ArrayList<>();
+
+    void initTurnDraft(int turnNumber, Scanner in, PlayerInfo player, PlayerInfo opponent) {
+        initTurn(turnNumber, in, player, opponent);
+        for (int i = 0; i < cardCount; i++) {
+            Card current = new Creature().read(in, turnNumber);
+
+            draftPicks[i] = current;
+            currentComment += "$" + current.cardNumber;
+        }
+    }
+
+    void initTurnCombat(int turnNumber, Scanner in, PlayerInfo player, PlayerInfo opponent) {
+        initTurn(turnNumber, in, player, opponent);
+        for (int i = 0; i < cardCount; i++) {
+            Card current = new Creature().read(in, turnNumber);
+
+            if (current.draftInfo.positionNumber == 0)
+            {
+                //My hand
+                myHand.put(current.cost, current);
+            }else if (current.draftInfo.positionNumber == 1)
+            {
+                //My board
+                myBoard.add(current);
+            }else if (current.draftInfo.positionNumber == -1)
+            {
+                //Other board
+                otherBoard.add(current);
+            }
+        }
+    }
+
+    void initTurn(int turnNumber, Scanner in, PlayerInfo player, PlayerInfo opponent) {
+        player.update(in);
+        opponent.update(in);
+
+        opponentHand = in.nextInt();
+        cardCount = in.nextInt();
+    }
+
+    public void playDraft() {
+        System.out.println("PASS " + currentComment);
+    }
+
+    public void playCards() {
+        boolean handOver = false;
+        while(player.playerMana > 0 || !handOver) {
+            int initMana = player.playerMana;
+            for(Card card : myHand.values())
+            {
+                if (card.cost <= player.playerMana)
+                {
+                    currentActions.add(new Action(Action.BASE.SUMMON, "" + card.cardNumber));
+                    card.isPlayed = true;
+                    player.playerMana -= card.cost;
+                }
+            }
+            if (player.playerMana == initMana)
+                handOver = true;
+        }
+    }
+
+    public void playCombat() {
+        for (Card card : myBoard)
+    }
+
+    public void playCombatTurn() {
+
+        playCards();
+
+        playCombat();
+
+        System.out.println("PASS yolo");
+    }
 
     public void play() {
         Scanner in = new Scanner(System.in);
@@ -169,35 +257,14 @@ class LegendsOfCodeGame {
 
         // game loop
         while (true) {
-            initTurn(turnCount, in, player, opponent);
-
             if (turnCount++ < 30) {
+                initTurnDraft(turnCount, in, player, opponent);
                 playDraft();
             } else {
-                playCombat();
+                initTurnCombat(turnCount, in, player, opponent);
+                playCombatTurn();
             }
         }
-    }
-
-    public void initTurn(int turnNumber, Scanner in, PlayerInfo player, PlayerInfo opponent) {
-
-        player.update(in);
-        opponent.update(in);
-
-        opponentHand = in.nextInt();
-        cardCount = in.nextInt();
-
-        for (int i = 0; i < cardCount; i++) {
-            Card current = new Creature().read(in, turnNumber);
-        }
-    }
-
-    public void playDraft() {
-        System.out.println("PASS");
-    }
-
-    public void playCombat() {
-        System.out.println("PASS yolo");
     }
 
     public void sendActions() {
