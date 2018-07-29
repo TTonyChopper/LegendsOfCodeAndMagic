@@ -23,10 +23,36 @@ abstract class Card {
     int myHealthChange;
     int opponentHealthChange;
     int cardDraw;
+
+    public Card(){}
+
+    Card read(Scanner in, int turnNumber)
+    {
+        this.cardNumber = in.nextInt();
+        this.instanceId = in.nextInt();
+        this.draftInfo = new DraftInfo(in.nextInt(), turnNumber);
+        this.cardType = in.nextInt();
+        this.cost = in.nextInt();
+        this.attack = in.nextInt();
+        this.defense = in.nextInt();
+        this.abilities = in.next();
+        this.myHealthChange = in.nextInt();
+        this.opponentHealthChange = in.nextInt();
+        this.cardDraw = in.nextInt();
+        return this;
+    }
 }
 
-class Creature extends Card {
+enum TYPE{ATTACKANT, DEFENSIVE, ROUNDED}
 
+class Creature extends Card {
+    int efficiency;
+    TYPE cardType;
+
+    void analyse()
+    {
+
+    }
 }
 
 class Action
@@ -69,6 +95,8 @@ class Action
     public String toString() {
         switch (base)
         {
+            case PICK:
+                return "PICK " + draftInfo.positionNumber;
             case SUMMON:
                 return "SUMMON " + ids[0];
             case ATTACK_CREATURE:
@@ -78,7 +106,7 @@ class Action
             case PASS:
                 return "PASS";
             default:
-                return "";
+                return "PASS YOLO";
         }
     }
 
@@ -104,10 +132,10 @@ class PlayerInfo {
     }
 
     public void update(Scanner in) {
-        int playerHealth = in.nextInt();
-        int playerMana = in.nextInt();
-        int playerDeck = in.nextInt();
-        int playerRune = in.nextInt();
+        this.playerHealth = in.nextInt();
+        this.playerMana = in.nextInt();
+        this.playerDeck = in.nextInt();
+        this.playerRune = in.nextInt();
     }
 }
 
@@ -141,7 +169,7 @@ class LegendsOfCodeGame {
 
         // game loop
         while (true) {
-            initTurn(in, player, opponent);
+            initTurn(turnCount, in, player, opponent);
 
             if (turnCount++ < 30) {
                 playDraft();
@@ -151,7 +179,7 @@ class LegendsOfCodeGame {
         }
     }
 
-    public void initTurn(Scanner in, PlayerInfo player, PlayerInfo opponent) {
+    public void initTurn(int turnNumber, Scanner in, PlayerInfo player, PlayerInfo opponent) {
 
         player.update(in);
         opponent.update(in);
@@ -160,17 +188,7 @@ class LegendsOfCodeGame {
         cardCount = in.nextInt();
 
         for (int i = 0; i < cardCount; i++) {
-            int cardNumber = in.nextInt();
-            int instanceId = in.nextInt();
-            int location = in.nextInt();
-            int cardType = in.nextInt();
-            int cost = in.nextInt();
-            int attack = in.nextInt();
-            int defense = in.nextInt();
-            String abilities = in.next();
-            int myHealthChange = in.nextInt();
-            int opponentHealthChange = in.nextInt();
-            int cardDraw = in.nextInt();
+            Card current = new Creature().read(in, turnNumber);
         }
     }
 
