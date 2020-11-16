@@ -3,7 +3,7 @@ package draft;
 public class Main {
 
     public static int main(String... args) {
-        new simpl.LegendsOfCodeGame().play();
+        new LegendsOfCodeGame().play();
         return 0;
     }
 }

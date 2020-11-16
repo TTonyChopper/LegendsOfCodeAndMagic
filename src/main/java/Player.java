@@ -6,10 +6,15 @@ class Player {
     }
 }
 
+class P{
+    static void p(String s) {
+        System.err.println(s);
+    }
+}
+
 abstract class Card {
 
     boolean isPlayed = false;
-
 
     DraftInfo draftInfo;
 
@@ -32,7 +37,7 @@ abstract class Card {
     Card read(Scanner in, int turnNumber) {
         this.cardNumber = in.nextInt();
         this.instanceId = in.nextInt();
-        this.draftInfo = new DraftInfo(in.nextInt(), turnNumber);
+        this.draftInfo = new DraftInfo(turnNumber, in.nextInt());
         this.cardType = in.nextInt();
         this.cost = in.nextInt();
         this.attack = in.nextInt();
@@ -42,6 +47,10 @@ abstract class Card {
         this.opponentHealthChange = in.nextInt();
         this.cardDraw = in.nextInt();
         return this;
+    }
+
+    public String toString() {
+        return cardNumber + ":A" + attack + ":D" + defense + ":C" + cost;
     }
 }
 
@@ -186,10 +195,14 @@ class LegendsOfCodeGame {
     void initTurnCombat(int turnNumber, Scanner in, PlayerInfo player, PlayerInfo opponent) {
         initTurn(turnNumber, in, player, opponent);
         for (int i = 0; i < cardCount; i++) {
+            P.p("before");
             Card current = new Creature().read(in, turnNumber);
-
+            P.p("after");
+            P.p(current.toString());
+            P.p(""+current.draftInfo.positionNumber);
             if (current.draftInfo.positionNumber == 0)
             {
+                P.p(current.toString());
                 //My hand
                 myHand.put(current.cost, current);
             }else if (current.draftInfo.positionNumber == 1)
@@ -214,28 +227,39 @@ class LegendsOfCodeGame {
 
     public void playDraft() {
         System.out.println("PASS " + currentComment);
+        currentComment = "";
     }
 
     public void playCards() {
         boolean handOver = false;
-        while(player.playerMana > 0 || !handOver) {
+        while(player.playerMana > 0 && !handOver) {
             int initMana = player.playerMana;
             for(Card card : myHand.values())
             {
+                P.p("debug "+card.cost);
+                P.p("debug2 "+player.playerMana);
                 if (card.cost <= player.playerMana)
                 {
-                    currentActions.add(new Action(Action.BASE.SUMMON, "" + card.cardNumber));
+                    P.p("debugd ");
+                    currentComment = currentComment + "summoned: " + card.cardNumber;
+                    currentActions.add(new Action(Action.BASE.SUMMON, currentComment, card.cardNumber));
                     card.isPlayed = true;
+                    myHand.remove(card);
                     player.playerMana -= card.cost;
                 }
             }
             if (player.playerMana == initMana)
+            {
                 handOver = true;
+            }
+            P.p("debug3 "+handOver);
         }
     }
 
     public void playCombat() {
-        for (Card card : myBoard)
+        for (Card card : myBoard) {
+            currentActions.add(new Action(Action.BASE.ATTACK_PLAYER, currentComment, card.cardNumber));
+        }
     }
 
     public void playCombatTurn() {
@@ -244,7 +268,7 @@ class LegendsOfCodeGame {
 
         playCombat();
 
-        System.out.println("PASS yolo");
+        sendActions();
     }
 
     public void play() {
@@ -268,6 +292,7 @@ class LegendsOfCodeGame {
     }
 
     public void sendActions() {
+        P.p("nbActions " + currentActions.size());
         StringBuffer sb = new StringBuffer();
         for (Action a : currentActions) {
             // Write an action using System.out.println()
